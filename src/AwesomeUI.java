@@ -23,6 +23,8 @@ public class AwesomeUI {
         } else if (choice.toLowerCase().equals("join")) {
             Client client = new Client();
             client.join(name);
+        } else if (choice.equals("a")) {
+            Microphone.play();
         }
     }
 }

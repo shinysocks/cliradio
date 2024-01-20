@@ -24,7 +24,7 @@ public class Client {
 
     public void join(String name) throws UnknownHostException, IOException {
         System.out.println("establishing connection with host..");
-        clientSocket = new Socket("10.186.2.213", 8808);   
+        clientSocket = new Socket("10.183.3.189", 8808);   
          
         Scanner in = new Scanner(clientSocket.getInputStream());
         PrintStream out = new PrintStream(clientSocket.getOutputStream()); 
