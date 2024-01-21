@@ -1,8 +1,12 @@
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.TargetDataLine;
 
 public class Host {
     private ServerSocket serverSocket;
@@ -18,13 +22,9 @@ public class Host {
             System.out.println("connected to client: " + clientSocket.toString());
         }
         // send server name
-        PrintStream out = new PrintStream(clientSocket.getOutputStream());  
-        out.println(name);
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-        // recieve client name
-        Scanner in = new Scanner(clientSocket.getInputStream());
-        System.out.println(in.next() + " has connected.");
-
+        stream(out);
         stop();
     }
 
@@ -38,4 +38,41 @@ public class Host {
         clientSocket.close();
         serverSocket.close();
     }
+
+    public static TargetDataLine getTarget() throws LineUnavailableException {
+        TargetDataLine.Info info = new TargetDataLine.Info(TargetDataLine.class, Constants.format);
+        if (!AudioSystem.isLineSupported(info)) {
+            return null;
+        }
+        return (TargetDataLine) AudioSystem.getLine(info);
+    }
+
+    public static void stream(DataOutputStream out) throws IOException {
+        TargetDataLine in;
+
+        try {
+            in = getTarget();
+
+            in.open();
+        } catch (LineUnavailableException e) {
+            System.out.println("no available microphone found..");
+            in = null;
+        }
+
+        // start microphone & speaker
+        in.start();
+
+        AudioInputStream stream = new AudioInputStream(in);
+
+        // stream audio
+        byte[] bufferBytes = new byte[Constants.BUFFER_SIZE];
+        
+        while (true) {
+           out.write(bufferBytes, 0, stream.read(bufferBytes));
+        }
+
+        // out.close();
+        // stream.close();
+    }
+
 }

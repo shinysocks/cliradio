@@ -9,4 +9,16 @@ public class Constants {
     public static final int CHANNELS = 2;
     public static final int SAMPLE_SIZE = 8;
     public static final boolean BIG_ENDIAN = true;
+
+    public static AudioFormat getAudioFormat() {
+        AudioFormat.Encoding encoding = Constants.ENCODING;
+        float rate = Constants.RATE;
+        int channels = Constants.CHANNELS;
+        int sampleSize = Constants.SAMPLE_SIZE;
+        boolean bigEndian = Constants.BIG_ENDIAN;
+
+        return new AudioFormat(encoding, rate, sampleSize, channels, (sampleSize / 8) * channels, rate, bigEndian);
+    }
+
+    public static final AudioFormat format = getAudioFormat();
 }

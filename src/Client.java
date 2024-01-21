@@ -2,36 +2,58 @@
 //https://www.developer.com/web-services/dynamic-service-discovery-with-java/
 
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
+
 public class Client {
     private static Socket clientSocket;
-    private static PrintWriter out;
-    private static BufferedReader in;
     public static Scanner scanner = new Scanner(System.in);
-
-    public void stopConnection() throws IOException {
-        in.close();
-        out.close();
-        clientSocket.close();
-    }
 
     public void join(String name) throws UnknownHostException, IOException {
         System.out.println("establishing connection with host..");
-        clientSocket = new Socket("10.183.3.189", 8808);   
-         
-        Scanner in = new Scanner(clientSocket.getInputStream());
-        PrintStream out = new PrintStream(clientSocket.getOutputStream()); 
+        clientSocket = new Socket("192.168.2.201", 8808);   
+        
+        DataInputStream in = new DataInputStream(clientSocket.getInputStream());
 
-        out.println(name);
-        System.out.println("connected to " + in.next());
+        play(in);
+    }
 
-        in.close();
+    public static SourceDataLine getSource() throws LineUnavailableException {
+        SourceDataLine.Info info = new SourceDataLine.Info(SourceDataLine.class, Constants.format);
+        if (!AudioSystem.isLineSupported(info)) {
+            return null;
+        }
+        return (SourceDataLine) AudioSystem.getLine(info);
+    }
+
+    public static void play(DataInputStream inputStream) throws IOException {
+        SourceDataLine out;
+
+        try {
+            out = getSource();
+            out.open();
+        } catch (LineUnavailableException e) {
+            System.out.println("no available speaker found..");
+            out = null;
+        }
+
+        // start speaker
+        out.start();
+
+        // stream audio from 
+        byte[] bufferBytes = new byte[Constants.BUFFER_SIZE];
+        while (true) {
+           out.write(bufferBytes, 0, inputStream.read(bufferBytes));
+        }
+
+        // out.drain();
+        // out.close();
     }
 }
