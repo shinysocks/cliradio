@@ -13,16 +13,17 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 public class Client {
-    private static Socket clientSocket;
     public static Scanner scanner = new Scanner(System.in);
 
     public void join(String ip) throws UnknownHostException, IOException {
         System.out.println("establishing connection with host..");
-        clientSocket = new Socket(ip, 8808);   
+        System.out.println("|"+ip+"|:");
+        Socket hostSocket = new Socket(ip, 8808);
         
-        DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+        DataInputStream in = new DataInputStream(hostSocket.getInputStream());
 
         play(in);
+        hostSocket.close();
     }
 
     public static SourceDataLine getSource() throws LineUnavailableException {

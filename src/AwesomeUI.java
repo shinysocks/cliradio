@@ -16,12 +16,12 @@ public class AwesomeUI {
         String choice = scanner.next();
 
         // host or join
-        if (choice.toLowerCase().equals("host")) {
+        if (choice.strip().toLowerCase().equals("host")) {
             Host host = new Host();
             host.start();
-        } else if (choice.toLowerCase().equals("join")) {
+        } else if (choice.strip().toLowerCase().equals("join")) {
             System.out.print("what ip would you like to join? ");
-            String ip = scanner.next();
+            String ip = scanner.next().strip();
             Client client = new Client();
             client.join(ip);
         }
