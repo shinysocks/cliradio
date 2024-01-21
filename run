@@ -1,0 +1,2 @@
+#!/bin/bash
+cd src ; javac AwesomeUI.java -d ../bin ; cd ../bin ; java AwesomeUI

@@ -1,7 +1,7 @@
 import javax.sound.sampled.AudioFormat;
 
 public class Constants {
-    public static final int BUFFER_SIZE = 4096;
+    public static final int BUFFER_SIZE = 2048;
 
     // https://github.com/eugenp/tutorials/blob/master/core-java-modules/core-java-os/src/main/java/com/baeldung/example/soundapi/ApplicationProperties.java
 

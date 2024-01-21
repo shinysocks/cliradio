@@ -23,7 +23,7 @@ public class AwesomeUI {
             System.out.print("what ip would you like to join? ");
             String ip = scanner.next().strip();
             Client client = new Client();
-            client.join(ip);
+            client.join("127.0.0.1");
         }
     }
 }

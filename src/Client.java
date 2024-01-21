@@ -17,7 +17,6 @@ public class Client {
 
     public void join(String ip) throws UnknownHostException, IOException {
         System.out.println("establishing connection with host..");
-        System.out.println("|"+ip+"|:");
         Socket hostSocket = new Socket(ip, 8808);
         
         DataInputStream in = new DataInputStream(hostSocket.getInputStream());
