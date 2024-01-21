@@ -12,7 +12,7 @@ public class Host {
     private ServerSocket serverSocket;
     private Socket clientSocket;
 
-    public void start(String name) throws IOException {
+    public void start() throws IOException {
         System.out.println("server starting...");
         serverSocket = new ServerSocket(findPort());
         System.out.println("waiting...");
