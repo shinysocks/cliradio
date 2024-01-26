@@ -7,23 +7,29 @@ public class AwesomeUI {
     public static void main(String[] args) throws IOException {
         // main menu
         scanner.useDelimiter("\n");
-        System.out.println("localradio");
-        System.out.println("----------");
-        // System.out.print("what is your username / room name? ");
-        // name = scanner.next();
+        System.out.println(" ____________");
+        System.out.println("| cliradio 🎵|");
+        System.out.println(" ‾‾‾‾‾‾‾‾‾‾‾‾");
 
-        System.out.print("would you like to host or join? ");
+        System.out.print("host or join? ");
         String choice = scanner.next();
 
         // host or join
         if (choice.strip().toLowerCase().equals("host")) {
             Host host = new Host();
-            host.start();
+            System.out.print("station name: ");
+            String name = scanner.next().strip();
+            host.start(name);
         } else if (choice.strip().toLowerCase().equals("join")) {
-            System.out.print("what ip would you like to join? ");
+            System.out.print("display name: ");
+            String name = scanner.next().strip();
+
+            System.out.print("ip: ");
             String ip = scanner.next().strip();
             Client client = new Client();
-            client.join("127.0.0.1");
+            client.join(ip, name);
+        } else {
+            System.out.println("something went wrong, please try again.");
         }
     }
 }
