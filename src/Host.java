@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -44,13 +45,6 @@ public class Host {
             System.out.println("please connect a microphone..");
         }
 
-        try {
-            target.open();
-            target.start();
-        } catch (LineUnavailableException e) {
-            System.out.println("cannot access microphone..");
-        }
-
         ServerSocket serverSocket = new ServerSocket(8808);
 
         System.out.println(name + " listening on port 8808");
@@ -58,22 +52,34 @@ public class Host {
         while (true) {
             Socket clientSocket = serverSocket.accept();
             //handshake
-            System.out.println(clientSocket.getInetAddress().getHostName() + " connected");
+            if (clientSocket.isConnected()) {
+                
+                try {
+                    target.open();
+                    target.start();
+                } catch (LineUnavailableException e) {
+                    System.out.println("cannot access microphone..");
+                }
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    boolean stop = false;
-                    while (!stop) {
-                        try {
-                            clientSocket.getOutputStream().write(Constants.BUFFER_BYTES, 0, new AudioInputStream(target).read(Constants.BUFFER_BYTES));
-                        } catch (IOException ee) {
-                            System.out.println("stream disconnected");
-                            stop = true;
+                System.out.println(clientSocket.getInetAddress().getHostName() + " connected");
+                OutputStream out = clientSocket.getOutputStream();
+                AudioInputStream in = new AudioInputStream(target);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean stop = false;
+                        while (!stop) {
+                            try {
+                                out.write(Constants.BUFFER_BYTES, 0, in.read(Constants.BUFFER_BYTES));
+                            } catch (IOException ee) {
+                                System.out.println("stream disconnected");
+                                stop = true;
+                            }
                         }
                     }
-                }
-            }).start();
+                }).start();
+            }
         }
 
         // serverSocket.close();

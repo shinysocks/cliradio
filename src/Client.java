@@ -2,6 +2,7 @@
 //https://www.developer.com/web-services/dynamic-service-discovery-with-java/
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -25,10 +26,12 @@ public class Client {
             System.out.println("cannot open microphone device..");
         }
 
+        InputStream in = hostSocket.getInputStream();
+
         boolean stop = false;
         while (!stop) {
             try {
-                source.write(Constants.BUFFER_BYTES, 0, hostSocket.getInputStream().read(Constants.BUFFER_BYTES));
+                source.write(Constants.BUFFER_BYTES, 0, in.read(Constants.BUFFER_BYTES));
             } catch (IOException e) {
                 System.out.println("disconnected from stream.");
                 stop = true;

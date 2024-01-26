@@ -8,7 +8,7 @@ public class Constants {
 
     public static AudioFormat getAudioFormat() {
         AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
-        float rate = 44100.0f;
+        float rate = 22050.0f;
         int channels = 2;
         int sampleSize = 8;
         boolean bigEndian = true;
