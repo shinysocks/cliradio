@@ -30,6 +30,7 @@ public class Client {
 
         boolean stop = false;
         while (!stop) {
+            
             try {
                 source.write(Constants.BUFFER_BYTES, 0, in.read(Constants.BUFFER_BYTES));
             } catch (IOException e) {
