@@ -1,21 +1,27 @@
-//NETWORK DISCOVERY LOCALLY!!!!
-//https://www.developer.com/web-services/dynamic-service-discovery-with-java/
-
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
-public class Client {
-    private SourceDataLine source;
+import java.util.Scanner;
 
+public class Client {
+    private String name;
+    private SourceDataLine source;
+    
     public void join(String ip, String name) throws IOException {
         System.out.println("establishing connection with host..");
-        Socket hostSocket = new Socket(ip, 8808);
+        
+        Socket streamSocket = new Socket(ip, 8808);
+        Socket chatSocket = new Socket(ip, 8809);
 
-        System.out.println("connected to " + hostSocket.getInetAddress());
+        // replace with host's name
+        System.out.println("connected to " + chatSocket.getInetAddress());
 
         try {
             source = getSource();
@@ -26,20 +32,53 @@ public class Client {
             System.out.println("cannot open microphone device..");
         }
 
-        InputStream in = hostSocket.getInputStream();
+        InputStream in = streamSocket.getInputStream();
+        BufferedReader chatIn = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+        PrintWriter chatOut = new PrintWriter(chatSocket.getOutputStream(), true);
+        Scanner scanner = new Scanner(System.in);
 
-        boolean stop = false;
-        while (!stop) {
-            
+        // send messages to server
+         new Thread(new Runnable() {
+        	@Override
+			public void run() {
+                while (true) {
+                    String message = scanner.nextLine();
+                    chatOut.println(name + ": " + message);
+                }
+            }
+        }).start();
+
+        // read out messages
+         new Thread(new Runnable() {
+        	@Override
+			public void run() {
+			    boolean stop = false;
+                while (!stop) {
+                    try {
+                        String message = chatIn.readLine();
+                        if (message != null) {
+                            System.out.println(message);
+                        } else {
+                            stop = true;
+                        }
+                    } catch (IOException e) {
+                        System.out.println("can't read message..");
+                    }
+                }
+            }
+        }).start();
+
+        // play audio
+        while (true) {
             try {
+                // read audio
                 source.write(Constants.BUFFER_BYTES, 0, in.read(Constants.BUFFER_BYTES));
             } catch (IOException e) {
                 System.out.println("disconnected from stream.");
-                stop = true;
             }
         }
-        source.drain();
-        source.close();
+        // source.drain();
+        // source.close();
     }
 
     private SourceDataLine getSource() throws LineUnavailableException {

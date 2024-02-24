@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -16,17 +17,19 @@ import javax.sound.sampled.TargetDataLine;
 
 public class Host {
     private TargetDataLine target;
+    public InputStream chatInputStream;
+    public ArrayList<PrintWriter> chatOutputStreams;
 
     public void start(String name) throws IOException {
         try {
             target = getTarget();
-            System.out.println(target + " selected.");
         } catch (Exception e) {
             System.out.println("please connect a microphone..");
         }
 
-        ServerSocket serverSocket = new ServerSocket(8808);
-
+        ServerSocket streamSocket = new ServerSocket(8808);
+        ServerSocket chatSocket = new ServerSocket(8809);
+        
         System.out.println(name + " listening on port 8808");
        
         try {
@@ -37,9 +40,10 @@ public class Host {
         }
 
         AudioInputStream in = new AudioInputStream(target);
+        ArrayList<OutputStream> audioOutputStreams = new ArrayList<OutputStream>();
+        chatOutputStreams = new ArrayList<PrintWriter>();
 
-        ArrayList<OutputStream> streams = new ArrayList<OutputStream>();
-        
+        // send host audio to all clients
         new Thread(new Runnable() {
             boolean stop = false;
         	@Override
@@ -47,61 +51,76 @@ public class Host {
                 while (!stop) {
                     try {
                         int size = in.read(Constants.BUFFER_BYTES);
-                        for (int i = 0; i < streams.size(); i++) {
-                        	streams.get(i).write(Constants.BUFFER_BYTES, 0, size);
+                        for (int i = 0; i < audioOutputStreams.size(); i++) {
+                        	audioOutputStreams.get(i).write(Constants.BUFFER_BYTES, 0, size);
                         }
-                    } catch (IOException e) {}
+                    } catch (IOException e) {
+                        System.out.println(e);
+                    }
                 }
             }
         }).start();
+
+        // send host messages to all clients
+        Scanner scanner = new Scanner(System.in);
+        new Thread(new Runnable() {
+        	@Override
+            public void run() {
+            	while (true) {
+            	    System.out.print("> ");
+                    String message = scanner.nextLine();
+                    sendOut(name + ": " + message, null);
+            	}
+            }
+        }).start();
+        
         while (true) {
-            Socket clientSocket = serverSocket.accept();
+            Socket clientChatSocket = chatSocket.accept();
+            Socket clientStreamSocket = streamSocket.accept();
+            
             //handshake
-            if (clientSocket.isConnected()) {
-                // BufferedReader chatIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                // PrintWriter chatOut = new PrintWriter(clientSocket.getOutputStream());
-                // Scanner scanner = new Scanner(System.in);
-                // handshake..
-                // chat start
+            if (clientChatSocket.isConnected()) {
+                PrintWriter chatOut = new PrintWriter(clientChatSocket.getOutputStream(), true);
+                BufferedReader chatIn = new BufferedReader(new InputStreamReader(clientChatSocket.getInputStream()));
+                
+                // connect new clients to stream
                 target.flush();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                }
-                streams.add(clientSocket.getOutputStream());
-                String clientName = clientSocket.getInetAddress().getHostName();
-                System.out.println(clientSocket.getInetAddress().getHostName() + " connected");
-           }
+                audioOutputStreams.add(clientStreamSocket.getOutputStream());
+                chatOutputStreams.add(chatOut);
+
+                // read messages from client and send
+                new Thread(new Runnable() {
+                	@Override
+                    public void run() {
+                    	while (true) {
+                            try {
+                        	    String message = chatIn.readLine();
+                        	    sendOut(message, chatOut);
+                        	    System.out.println(message);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                    	}
+                    }
+                }).start();
+            }
         }
     }
 
-    // enumerate microphones
+    private void sendOut(String message, PrintWriter ignore) {
+        for (PrintWriter pw : chatOutputStreams) {
+            if (pw != ignore) {
+                pw.println(message);
+            } 
+        }
+    }
+
+    // access microphone
     private TargetDataLine getTarget() throws LineUnavailableException {
         // return default audio target
         TargetDataLine.Info info = new TargetDataLine.Info(TargetDataLine.class, Constants.format);
-        if (!AudioSystem.isLineSupported(info)) {
+        if (!AudioSystem.isLineSupported(info))
             return null;
-        }
         return (TargetDataLine) AudioSystem.getLine(info);
-
-        // ArrayList<TargetDataLine> lines = new ArrayList<TargetDataLine>();
-        // TargetDataLine.Info info = new TargetDataLine.Info(TargetDataLine.class, Constants.format);
-
-        // for (Mixer.Info mixerInfo : AudioSystem.getMixerInfo()) {
-        //     Mixer m = AudioSystem.getMixer(mixerInfo);
-        //     Line.Info[] lineInfos = m.getTargetLineInfo();
-
-        //     for (Line.Info lineInfo : lineInfos) {
-        //         if (AudioSystem.isLineSupported(info)) {
-        //             lines.add((TargetDataLine) AudioSystem.getLine(info));
-        //             System.out.println(lineInfo);
-        //         }
-        //     }
-        // }
-        // return lines;
-    }
-
-    private void chat() {
-        
     }
 }
