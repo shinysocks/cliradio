@@ -5,18 +5,23 @@ public class Main {
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) throws IOException {
-        // put all main logic here, never leave main..
+        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+            System.out.println("Internal audio hosting not supported on Windows.");
+        } else {
+            Process p = new ProcessBuilder("/home/shinysocks/projects/cliradio/pw-cliradio").start();
+        }
         
         // main menu
+        System.out.print(ANSIColor.BOLD_DEFAULT);
         System.out.println(":------------:");
-        System.out.println("|  cliradio  |");
+        System.out.println("|  " + ANSIColor.magenta("cliradio") + "  |");
         System.out.println(":------------:");
+        System.out.print(ANSIColor.DEFAULT);
 
         System.out.print("host or join? ");
         String choice = scanner.next().strip().toLowerCase();
 
         // while not exited program
-        // system.clear()
         // host or join
         if (choice.equals("host")) {
             Host host = new Host();
@@ -36,8 +41,8 @@ public class Main {
 
             
         } else {
-            System.out.println("something went wrong, please try again.");
-            // try again
+            System.out.println(ANSIColor.err("something went wrong, please try again."));
+            // p.destroy();
         }
     }
 }

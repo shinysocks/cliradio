@@ -1,2 +1,2 @@
-# ignore compiled binaries
-bin
+mockup/*
+bin/*
