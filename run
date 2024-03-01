@@ -1,2 +1,2 @@
 #!/bin/bash
-cd src && javac Main.java -d ../bin && cd ../bin && java Main
+clear ; cd src && javac Main.java -d ../bin && cd ../bin && java Main

@@ -4,90 +4,66 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.util.Scanner;
 
 public class Client {
     private SourceDataLine source;
-    private boolean stop = false;
-    
-    public void join(String ip, String name) throws IOException {
+    private String name;
+    private String ip;
+    private InputStream audioIn;
+    private BufferedReader chatIn;
+    private PrintWriter chatOut;
+    private static Scanner scanner;
+    private Socket audioSocket, chatSocket;
+    private static boolean stop = false;
+
+    public Client(String name, String ip, SourceDataLine source) {
+        this.name = name;
+        this.ip = ip;
+        this.source = source;
+    }
+
+    public void run() throws IOException, LineUnavailableException {
         System.out.println("establishing connection with host..");
-        
-        Socket audioSocket = new Socket(ip, 8808);
-        Socket chatSocket = new Socket(ip, 8809);
 
-        try {
-            source = getSource();
-            source.open(); 
-            source.start();
+        audioSocket = new Socket(ip, 8808);
+        chatSocket = new Socket(ip, 8809);
 
-        } catch (LineUnavailableException e) {
-            System.out.println(ANSIColor.err("cannot open microphone device.."));
-        }
+        source.open();
+        source.start();
 
-        InputStream in = audioSocket.getInputStream();
-        BufferedReader chatIn = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
-        PrintWriter chatOut = new PrintWriter(chatSocket.getOutputStream(), true);
-        
-        // handshake        
+        audioIn = audioSocket.getInputStream();
+        chatIn = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+        chatOut = new PrintWriter(chatSocket.getOutputStream(), true);
+        scanner = new Scanner(System.in);
+
+        // send server client name
         chatOut.println(name);
-        System.out.println(ANSIColor.success("connected to " + chatIn.readLine()));
-        
-        Scanner scanner = new Scanner(System.in);
+        System.out.println(TUI.clientChatStart());
+        System.out.println(TUI.Color.success("connected to " + chatIn.readLine()));
 
-        // send messages to server
-         new Thread(new Runnable() {
-        	@Override
-			public void run() {
-                while (!stop) {
-                    String message = scanner.nextLine();
-                    if (message.equals("/leave"))
-                        stop = true;
-                    else
-                        chatOut.println(name + ": " + message);
-                }
-            }
-        }).start();
+        new Thread(new RecieveAudio(audioIn, source)).start();
+        new Thread(new RecieveMessage(chatIn)).start();
 
-        // read out messages
-         new Thread(new Runnable() {
-        	@Override
-			public void run() {
-                while (!stop) {
-                    try {
-                        String message = chatIn.readLine();
-                        if (message != null)
-                            System.out.println(message);
-                        else
-                            stop = true;
-                    } catch (IOException e) {
-                        System.out.println(ANSIColor.err("can't read message.."));
-                    }
-                }
-            }
-        }).start();
-
-        // play audio
         while (!stop) {
-            try {
-                // read audio
-                source.write(Constants.BUFFER_BYTES, 0, in.read(Constants.BUFFER_BYTES));
-            } catch (IOException e) {
-                System.out.println("disconnected from stream.");
-            }
-        }
+            // send client messages
+            String message = scanner.nextLine();
+            chatOut.println(name + ": " + message);
+        } 
+        
+        // close resources
+        try {
+            audioSocket.close();
+            chatSocket.close();
+        } catch (IOException e) {}
         source.drain();
         source.close();
     }
 
-    private SourceDataLine getSource() throws LineUnavailableException {
-        SourceDataLine.Info info = new SourceDataLine.Info(SourceDataLine.class, Constants.format);
-        if (!AudioSystem.isLineSupported(info)) {
-            return null;
-        }
-        return (SourceDataLine) AudioSystem.getLine(info);
+    public static void stop() {
+        scanner.close();
+        stop = true;
     }
 }

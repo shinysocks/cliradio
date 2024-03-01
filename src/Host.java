@@ -3,138 +3,103 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
 
 public class Host {
+    private String name;
     private TargetDataLine target;
-    private ArrayList<PrintWriter> chatOutputStreams;
-    private boolean stop = false;
-    private int clientCount = 0;
+    private int count = 0;
+    private Process internalTarget;
+    private ArrayList<OutputStream> audioOutStreams = new ArrayList<OutputStream>();
+    private static ArrayList<PrintWriter> chatOutStreams = new ArrayList<PrintWriter>();
+    private ServerSocket audioSocket, chatSocket;
+    private static boolean stop = false;
 
-    public void start(String name) throws IOException {
-        try {
-            target = getTarget();
-        } catch (Exception e) {
-            System.out.println(ANSIColor.err("please connect a microphone.."));
-        }
+    public Host(String name, TargetDataLine target) {
+        this.name = name;
+        this.target = target;
+    }
 
-        ServerSocket audioSocket = new ServerSocket(8808);
-        ServerSocket chatSocket = new ServerSocket(8809);
-        
-        System.out.println("server started. connect with " + audioSocket.getLocalSocketAddress());
-       
-        try {
-            target.open();
-            target.start();
-        } catch (LineUnavailableException e) {
-            System.out.println("cannot access microphone..");
-        }
-
-        AudioInputStream in = new AudioInputStream(target);
-        ArrayList<OutputStream> audioOutputStreams = new ArrayList<OutputStream>();
-        chatOutputStreams = new ArrayList<PrintWriter>();
-
-        // send host audio to all clients
-        new Thread(new Runnable() {
-        	@Override
-			public void run() {
-                while (!stop) {
-                    try {
-                        int size = in.read(Constants.BUFFER_BYTES);
-                        for (int i = 0; i < audioOutputStreams.size(); i++) {
-                        	audioOutputStreams.get(i).write(Constants.BUFFER_BYTES, 0, size);
-                        }
-                    } catch (IOException e) {
-                        System.out.println(e);
-                        stop = true;
-                    }
-                }
-            }
-        }).start();
-
-        // send host messages to all clients
+    public void run() throws IOException, LineUnavailableException {
+        audioSocket = new ServerSocket(8808);
+        chatSocket = new ServerSocket(8809);
         Scanner scanner = new Scanner(System.in);
-        new Thread(new Runnable() {
-        	@Override
-            public void run() {
-            	while (!stop) {
-                    String message = scanner.nextLine();
-                    if (message.equals("/end"))
-                        stop = true;
-                    else
-                        sendOut(ANSIColor.gray(name + ": " + message), null);
-            	}
-                scanner.close();
-            }
-       }).start();
-                  
-       while (!stop) {
+
+        if (!TUI.IS_WINDOWS) {
+            System.out.println(TUI.Color.success("internal audio capture is supported, creating virtual capture source.."));
+            internalTarget = AudioUtils.startInternalTarget();
+        }
+                            
+        target.open();
+        target.start();
+
+        System.out.println(TUI.hostChatStart());
+
+        Socket socket = new Socket();
+        System.out.println(TUI.Color.success("server started. connect with " + getLocalIP(socket)));
+        socket.close();
+
+        new Thread(new SendAudio(new AudioInputStream(target), audioOutStreams)).start();
+        new Thread(new SendHostMessage(scanner, name)).start();
+
+        while (!stop) {
             Socket clientChatSocket = chatSocket.accept();
             Socket clientStreamSocket = audioSocket.accept();
             
-            //handshake
-            if (clientChatSocket.isConnected()) {
-                clientCount++;
-                PrintWriter chatOut = new PrintWriter(clientChatSocket.getOutputStream(), true);
-                BufferedReader chatIn = new BufferedReader(new InputStreamReader(clientChatSocket.getInputStream()));
+            count++;
+            PrintWriter out = new PrintWriter(clientChatSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientChatSocket.getInputStream()));
 
-                System.out.println(ANSIColor.success(chatIn.readLine() + " connected"));
-                chatOut.println(name);
-                
-                // connect new clients to stream
-                target.flush();
-                audioOutputStreams.add(clientStreamSocket.getOutputStream());
-                chatOutputStreams.add(chatOut);
+            System.out.println(TUI.Color.success(in.readLine() + " connected"));
+            out.println(name);
+            
+            // connect new clients to stream
+            target.flush();
+            audioOutStreams.add(clientStreamSocket.getOutputStream());
+            chatOutStreams.add(out);
 
-                // read messages from client and send
-                new Thread(new Runnable() {
-                    String clientColor = ANSIColor.clientColor(clientCount);
-                	@Override
-                    public void run() {
-                    	while (!stop) {
-                            try {
-                        	    String message = chatIn.readLine();
-                        	    if (message == null) {
-                        	        chatOutputStreams.remove(chatOut);
-                        	        stop = true;
-                        	    } else {
-                        	        sendOut(clientColor + message + ANSIColor.DEFAULT, chatOut);
-                        	    }
-                        	    System.out.println(clientColor + message + ANSIColor.DEFAULT);
-                            } catch (IOException e) {
-                                System.out.println(e.getMessage());
-                                stop = true;
-                            }
-                    	}
-                    }
-                }).start();
-            }
+            // message send thread
+            Thread clientThread = new Thread(new ForwardMessages(in, out, chatOutStreams, TUI.Color.clientColor(count)));
+            clientThread.start();
         }
-        chatSocket.close();
-        audioSocket.close();
+        
+        try {
+            chatSocket.close();
+            audioSocket.close();
+        } catch (IOException e) {}
+        
+        if (internalTarget != null)
+            internalTarget.destroy();
     }
 
-    private void sendOut(String message, PrintWriter ignore) {
-        for (PrintWriter pw : chatOutputStreams) {
+    
+
+    public static void sendOut(String message, PrintWriter ignore) {
+        for (PrintWriter pw : chatOutStreams) {
             if (pw != ignore) {
                 pw.println(message);
             } 
         }
     }
 
-    // access microphone
-    private TargetDataLine getTarget() throws LineUnavailableException {
-        // return default audio target
-        TargetDataLine.Info info = new TargetDataLine.Info(TargetDataLine.class, Constants.format);
-        if (!AudioSystem.isLineSupported(info))
-            return null;
-        return (TargetDataLine) AudioSystem.getLine(info);
+    public static void stop() {
+        stop = true;
+    }
+
+    private String getLocalIP(Socket socket) {
+        try {
+            socket.connect(new InetSocketAddress("google.com", 80));
+            return TUI.Color.blue(socket.getLocalAddress().getHostAddress());
+        } catch (IOException e) {
+            System.out.println(TUI.Color.warn("can't get local ip address, are you connected to the internet?"));
+            return TUI.Color.blue("localhost");
+        }
     }
 }
