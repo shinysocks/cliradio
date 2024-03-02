@@ -9,7 +9,7 @@ public class AudioUtils {
     public static byte[] BUFFER_BYTES = new byte[4096];
 
     // build audio format
-    public static AudioFormat getAudioFormat() {
+    private static AudioFormat getAudioFormat() {
         AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
         float rate = 44100.0f;
         int channels = 2;

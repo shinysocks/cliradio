@@ -1,3 +1,7 @@
 #!/bin/bash
 pw-loopback --capture-props='media.class=Audio/Sink' --playback-props='audio.position=[FL FR]' -n cliradio-virtual-sink &
-pw-loopback --capture-props='stream.capture.sink=true' -C cliradio-virtual-sink -m '[FL FR]' --playback-props='media.class=Audio/Source audio.position=[FL FR]' -n cliradio-internal-capture & 
+
+pw-loopback --capture-props='stream.capture.sink=true' -C cliradio-virtual-sink -m '[FL FR]' \
+            --playback-props='media.class=Audio/Source audio.position=[FL FR]' -n cliradio-internal-capture & 
+
+
