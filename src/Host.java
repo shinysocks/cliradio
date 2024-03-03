@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -34,7 +35,11 @@ public class Host {
 
         if (!TUI.IS_WINDOWS) {
             System.out.println(TUI.Color.success("internal audio capture is supported, creating virtual capture source.."));
-            internalTarget = AudioUtils.startInternalTarget();
+            try {
+                internalTarget = AudioUtils.startInternalTarget();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
                             
         target.open();

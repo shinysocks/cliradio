@@ -1,11 +1,16 @@
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+
 import javax.sound.sampled.AudioFormat;
+
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
 public class AudioUtils {
+    
     public static byte[] BUFFER_BYTES = new byte[4096];
 
     // build audio format
@@ -20,13 +25,9 @@ public class AudioUtils {
 
     public static final AudioFormat format = getAudioFormat();
 
-    public static Process startInternalTarget() {
-        try {
-            return new ProcessBuilder("/home/shinysocks/projects/cliradio/pw-cliradio").start();
-        } catch (IOException e) {
-        	System.out.println(TUI.Color.warn("can't create internal source, is Pipewire installed?"));
-        	return null;
-        }
+    public static Process startInternalTarget() throws IOException {
+        String pwsource = "pw-loopback --capture-props='stream.capture.sink=true' -m '[FL FR]' --playback-props='media.class=Audio/Source audio.position=[FL FR] audio.remix=false' -n cliradio-internal-capture &"; 
+        return new ProcessBuilder("/bin/bash", "-c", pwsource).start();
     }
 
     // return default audio source (microphone or virtual source)
