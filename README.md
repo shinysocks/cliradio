@@ -1,5 +1,8 @@
 ## cliradio
 * written by Noah Dinan for the IB Computer Science Internal Assessment
+  
+![image](https://github.com/shinysocks/cliradio/assets/91911303/65983ec0-6ed7-4605-836c-eb7d3daa642f)
+
 ```mermaid
 ---
 title: cliradio flowchart
