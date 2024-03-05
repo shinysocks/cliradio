@@ -18,14 +18,14 @@ public class TUI {
     }
 
     public static class Color {
-        public final static String DEFAULT = IS_WINDOWS ? "Esc[0m" : "\033[0m";
-        private final static String BOLD_RED = IS_WINDOWS ? "Esc[91m" : "\033[31;1m";
-        private final static String BOLD_BLUE = IS_WINDOWS ? "Esc[94m" : "\033[34;1m";
-        private final static String BOLD_GREEN = IS_WINDOWS ? "Esc[92m" : "\033[32;1m";
-        private final static String BOLD_YELLOW = IS_WINDOWS ? "Esc[93m" : "\033[33;1m";
-        private final static String BOLD_MAGENTA = IS_WINDOWS ? "Esc[95m" : "\033[35;1m";
-        private final static String BOLD_CYAN = IS_WINDOWS ? "Esc[96m" : "\033b[36;1m";
-        private final static String BOLD_GRAY = IS_WINDOWS ? "Esc[90m" : "\033[90;1m";
+        public final static String DEFAULT = IS_WINDOWS ? "": "\u001b[0m";
+        private final static String BOLD_RED = IS_WINDOWS ? "": "\u001b[31;1m";
+        private final static String BOLD_BLUE = IS_WINDOWS ? "": "\u001b[34;1m";
+        private final static String BOLD_GREEN = IS_WINDOWS ? "": "\u001b[32;1m";
+        private final static String BOLD_YELLOW = IS_WINDOWS ? "": "\u001b[33;1m";
+        private final static String BOLD_MAGENTA = IS_WINDOWS ? "": "\u001b[35;1m";
+        private final static String BOLD_CYAN = IS_WINDOWS ? "": "\u001b[36;1m";
+        private final static String BOLD_GRAY = IS_WINDOWS ? "": "\u001b[90;1m";
 
         public final static String[] colors = new String[] { BOLD_BLUE, BOLD_CYAN, BOLD_MAGENTA, BOLD_YELLOW,
                 BOLD_GREEN };

@@ -6,6 +6,7 @@ import javax.sound.sampled.TargetDataLine;
 
 public class Main {
     private static Scanner scanner = new Scanner(System.in);
+    private static TargetDataLine target;
 
     public static void main(String[] args) {
         System.out.println(TUI.logo());
@@ -17,15 +18,16 @@ public class Main {
             System.out.print("station name: ");
             String name = scanner.next().strip();
             try {
-                TargetDataLine target = AudioUtils.getTarget();
-                Host host = new Host(name, target);
-                try {
-                    host.run();
-                } catch (IOException e) {
-                    System.out.println(TUI.Color.err("cannot start a new host."));
-                }
+                target = AudioUtils.getTarget();
             } catch (LineUnavailableException e) {
                 System.out.println(TUI.Color.err("can't get default audio source, try connecting a microphone."));
+                target = null;
+            }
+            try {
+                Host host = new Host(name, target);
+                host.run();
+            } catch (Exception e) {
+                System.out.println(TUI.Color.err("cannot start a new host."));
             }
         } else if (choice.equals("join")) {
             System.out.print("display name: ");

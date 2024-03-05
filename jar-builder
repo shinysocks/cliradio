@@ -2,4 +2,4 @@
 clear
 cd src && javac Main.java -d ../bin
 cd ../bin
-jar cfm ../cliradio.jar ../MANIFEST.MF ../pw-cliradio *.class
+jar cfm ../cliradio.jar ../MANIFEST.MF *.class
