@@ -21,12 +21,12 @@ public class Main {
                 target = AudioUtils.getTarget();
             } catch (LineUnavailableException e) {
                 System.out.println(TUI.Color.err("can't get default audio source, try connecting a microphone."));
-                target = null;
             }
             try {
                 Host host = new Host(name, target);
                 host.run();
             } catch (Exception e) {
+                // e.printStackTrace();
                 System.out.println(TUI.Color.err("cannot start a new host."));
             }
         } else if (choice.equals("join")) {

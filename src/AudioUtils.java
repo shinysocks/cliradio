@@ -1,9 +1,6 @@
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 import javax.sound.sampled.AudioFormat;
-
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
@@ -33,8 +30,9 @@ public class AudioUtils {
     // return default audio source (microphone or virtual source)
     public static TargetDataLine getTarget() throws LineUnavailableException {
         TargetDataLine.Info info = new TargetDataLine.Info(TargetDataLine.class, format);
-        if (!AudioSystem.isLineSupported(info))
-            return null;
+        if (!AudioSystem.isLineSupported(info)) {
+            throw new LineUnavailableException();
+        }
         return (TargetDataLine) AudioSystem.getLine(info);
     }
 
